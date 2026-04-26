@@ -198,7 +198,7 @@ export default async function handler(req, res) {
         const [stats, paths, countries, os, browsers, devices] = await Promise.all([
           umamiRequest(`/websites/${siteId}/stats?${timeParams}`, token),
           umamiRequest(`/websites/${siteId}/metrics/expanded?type=url&${timeParams}&limit=10`, token),
-          umamiRequest(`/websites/${siteId}/metrics/expanded?type=country&${timeParams}&limit=10`, token),
+          umamiRequest(`/websites/${siteId}/metrics/expanded?type=region&${timeParams}&limit=10`, token),
           umamiRequest(`/websites/${siteId}/metrics/expanded?type=os&${timeParams}&limit=10`, token),
           umamiRequest(`/websites/${siteId}/metrics/expanded?type=browser&${timeParams}&limit=10`, token),
           umamiRequest(`/websites/${siteId}/metrics/expanded?type=device&${timeParams}&limit=10`, token),
