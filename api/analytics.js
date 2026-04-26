@@ -120,14 +120,21 @@ export default async function handler(req, res) {
           `/websites/${siteId}/stats?${timeParams}`,
           token
         );
+        // Umami بيرجع الداتا بشكلين: { value: X } أو رقم مباشر
+        const val = (field) => {
+          if (field === null || field === undefined) return 0;
+          if (typeof field === "object") return field.value ?? 0;
+          return field;
+        };
+        const views   = val(stats.pageviews);
+        const visits  = val(stats.visits);
+        const total   = val(stats.totaltime);
         data = {
-          views:         stats.pageviews?.value ?? 0,
-          visits:        stats.visits?.value ?? 0,
-          visitors:      stats.visitors?.value ?? 0,
-          visitDuration: stats.totaltime?.value
-            ? Math.round(stats.totaltime.value / (stats.visits?.value || 1))
-            : 0,
-          bounceRate:    stats.bounces?.value ?? 0,
+          views,
+          visits,
+          visitors:      val(stats.visitors),
+          visitDuration: total && visits ? Math.round(total / visits) : 0,
+          bounceRate:    val(stats.bounces),
           period,
           fetchedAt: new Date().toISOString(),
         };
@@ -208,14 +215,15 @@ export default async function handler(req, res) {
           umamiRequest(`/websites/${siteId}/metrics?type=device&${timeParams}&limit=10`, token),
         ]);
 
+        const v = (f) => (f === null || f === undefined) ? 0 : (typeof f === 'object' ? (f.value ?? 0) : f);
+        const allVisits = v(stats.visits);
+        const allTime   = v(stats.totaltime);
         data = {
           summary: {
-            views:         stats.pageviews?.value ?? 0,
-            visits:        stats.visits?.value ?? 0,
-            visitors:      stats.visitors?.value ?? 0,
-            visitDuration: stats.totaltime?.value
-              ? Math.round(stats.totaltime.value / (stats.visits?.value || 1))
-              : 0,
+            views:         v(stats.pageviews),
+            visits:        allVisits,
+            visitors:      v(stats.visitors),
+            visitDuration: allTime && allVisits ? Math.round(allTime / allVisits) : 0,
           },
           countries,
           os,
