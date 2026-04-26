@@ -6,10 +6,8 @@ const UMAMI_API_BASE = "https://api.umami.is/v1";
 const CACHE_DURATION = 60 * 1000; // 1 minute
 const TIMEZONE = "Africa/Cairo"; // UTC+3
 
-// In-memory cache
 const cache = new Map();
 
-// ---- Helper: fetch from Umami API ----
 async function umamiRequest(path, token) {
   const res = await fetch(`${UMAMI_API_BASE}${path}`, {
     headers: {
@@ -24,32 +22,31 @@ async function umamiRequest(path, token) {
   return res.json();
 }
 
-// ---- Helper: Cairo-aware date ranges ----
+// ---- Cairo-aware date helpers ----
+function getCairoDateStr() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: TIMEZONE }); // "2026-04-27"
+}
+
 function getCairoMidnight() {
-  const now = new Date();
-  const cairoStr = now.toLocaleDateString("en-CA", { timeZone: TIMEZONE });
-  return new Date(`${cairoStr}T00:00:00+03:00`).getTime();
+  return new Date(`${getCairoDateStr()}T00:00:00+03:00`).getTime();
 }
 
 function getCairoWeekStart() {
-  const now = new Date();
-  const cairoStr = now.toLocaleDateString("en-CA", { timeZone: TIMEZONE });
-  const d = new Date(`${cairoStr}T00:00:00+03:00`);
-  d.setDate(d.getDate() - d.getDay());
+  const d = new Date(`${getCairoDateStr()}T00:00:00+03:00`);
+  // Umami يعتبر الأسبوع من الاثنين
+  const day = d.getDay(); // 0=Sun, 1=Mon, ...
+  const diff = day === 0 ? -6 : 1 - day; // لو أحد نرجع 6 أيام، غير كده نرجع للاثنين
+  d.setDate(d.getDate() + diff);
   return d.getTime();
 }
 
 function getCairoMonthStart() {
-  const now = new Date();
-  const cairoStr = now.toLocaleDateString("en-CA", { timeZone: TIMEZONE });
-  const [y, m] = cairoStr.split("-");
+  const [y, m] = getCairoDateStr().split("-");
   return new Date(`${y}-${m}-01T00:00:00+03:00`).getTime();
 }
 
 function getCairoYearStart() {
-  const now = new Date();
-  const cairoStr = now.toLocaleDateString("en-CA", { timeZone: TIMEZONE });
-  const [y] = cairoStr.split("-");
+  const [y] = getCairoDateStr().split("-");
   return new Date(`${y}-01-01T00:00:00+03:00`).getTime();
 }
 
@@ -68,11 +65,9 @@ function getDateRange(period) {
   return ranges[period] || ranges["24hour"];
 }
 
-// ---- Helper: normalize value ----
 const val = (f) =>
   f === null || f === undefined ? 0 : typeof f === "object" ? (f.value ?? 0) : f;
 
-// ---- Helper: format expanded metrics ----
 function formatExpanded(items) {
   if (!Array.isArray(items)) return [];
   return items.map((item) => ({
@@ -85,7 +80,6 @@ function formatExpanded(items) {
   }));
 }
 
-// ---- Main handler ----
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -146,14 +140,6 @@ export default async function handler(req, res) {
         break;
       }
 
-      case "country": {
-        const result = await umamiRequest(
-          `/websites/${siteId}/metrics/expanded?type=country&${timeParams}&limit=20`, token
-        );
-        data = { items: formatExpanded(result), view: "country", period, fetchedAt: new Date().toISOString() };
-        break;
-      }
-
       case "region": {
         const result = await umamiRequest(
           `/websites/${siteId}/metrics/expanded?type=region&${timeParams}&limit=20`, token
@@ -195,7 +181,7 @@ export default async function handler(req, res) {
       }
 
       case "all": {
-        const [stats, paths, countries, os, browsers, devices] = await Promise.all([
+        const [stats, paths, regions, os, browsers, devices] = await Promise.all([
           umamiRequest(`/websites/${siteId}/stats?${timeParams}`, token),
           umamiRequest(`/websites/${siteId}/metrics/expanded?type=url&${timeParams}&limit=10`, token),
           umamiRequest(`/websites/${siteId}/metrics/expanded?type=region&${timeParams}&limit=10`, token),
@@ -213,11 +199,11 @@ export default async function handler(req, res) {
             visitDuration: allTime && allVisits ? Math.round(allTime / allVisits) : 0,
             bounceRate:    val(stats.bounces),
           },
-          topPages:  formatExpanded(paths),
-          countries: formatExpanded(countries),
-          os:        formatExpanded(os),
-          browsers:  formatExpanded(browsers),
-          devices:   formatExpanded(devices),
+          topPages: formatExpanded(paths),
+          regions:  formatExpanded(regions),
+          os:       formatExpanded(os),
+          browsers: formatExpanded(browsers),
+          devices:  formatExpanded(devices),
           period,
           fetchedAt: new Date().toISOString(),
         };
@@ -227,7 +213,7 @@ export default async function handler(req, res) {
       default:
         return res.status(400).json({
           error: `Unknown view: ${view}`,
-          validViews: ["summary","country","region","os","path","browser","device","referrer","all"],
+          validViews: ["summary","region","os","path","browser","device","referrer","all"],
         });
     }
 
