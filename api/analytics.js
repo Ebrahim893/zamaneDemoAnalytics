@@ -48,9 +48,13 @@ function getDateRange(period) {
 }
 
 function startOfDay() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
+    const now = new Date();
+    // تحويل لتوقيت مصر UTC+3
+    const cairoOffset = 3 * 60; // دقائق
+    const cairoNow = new Date(now.getTime() + (cairoOffset - now.getTimezoneOffset()) * 60000);
+    cairoNow.setHours(0, 0, 0, 0);
+    // رجّع للـ UTC
+    return new Date(cairoNow.getTime() - (cairoOffset * 60000)).getTime();
 }
 
 function startOfWeek() {
