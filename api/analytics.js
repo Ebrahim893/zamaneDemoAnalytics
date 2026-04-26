@@ -210,10 +210,20 @@ export default async function handler(req, res) {
         break;
       }
 
+      case "live": {
+        // عدد المستخدمين النشطين دلوقتي (آخر 5 دقائق)
+        const result = await umamiRequest(`/websites/${siteId}/active`, token);
+        data = {
+          active: result.x ?? result.visitors ?? result ?? 0,
+          fetchedAt: new Date().toISOString(),
+        };
+        break;
+      }
+
       default:
         return res.status(400).json({
           error: `Unknown view: ${view}`,
-          validViews: ["summary","region","os","path","browser","device","referrer","all"],
+          validViews: ["summary","region","os","path","browser","device","referrer","all","live"],
         });
     }
 
