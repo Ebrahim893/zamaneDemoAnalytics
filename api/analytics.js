@@ -109,7 +109,7 @@ export default async function handler(req, res) {
     if (!token) return res.status(500).json({ error: "UMAMI_API_KEY not configured" });
 
     const { startAt, endAt } = getDateRange(period);
-    const timeParams = `startAt=${startAt}&endAt=${endAt}`;
+   const timeParams = `startAt=${startAt}&endAt=${endAt}&timezone=Africa/Cairo`;
 
     let data;
 
