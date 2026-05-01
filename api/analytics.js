@@ -32,10 +32,16 @@ function getCairoMidnight() {
 }
 
 function getCairoWeekStart() {
+  const now = new Date();
+  // نجيب يوم الأسبوع بتوقيت القاهرة صح (مش UTC)
+  const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const cairoWeekday = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIMEZONE, weekday: 'short'
+  }).format(now);
+  const cairoDay = weekdays.indexOf(cairoWeekday);
   const d = new Date(`${getCairoDateStr()}T00:00:00+03:00`);
-  // Umami يعتبر الأسبوع من الاثنين
-  const day = d.getDay(); // 0=Sun, 1=Mon, ...
-  const diff = day === 0 ? -6 : 1 - day; // لو أحد نرجع 6 أيام، غير كده نرجع للاثنين
+  // Umami بيعتبر الأسبوع من الاثنين
+  const diff = cairoDay === 0 ? -6 : 1 - cairoDay;
   d.setDate(d.getDate() + diff);
   return d.getTime();
 }
