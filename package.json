@@ -1,7 +1,7 @@
 {
-  "name": "umami-api-wrapper",
+  "name": "posthog-api-wrapper",
   "version": "1.0.0",
-  "description": "Umami Analytics API Wrapper for Vercel",
+  "description": "PostHog Analytics API Wrapper for Vercel",
   "main": "api/analytics.js",
   "scripts": {
     "dev": "vercel dev"
